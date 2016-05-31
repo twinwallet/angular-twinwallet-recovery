@@ -93,8 +93,8 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
     
     return deferred.promise.then(function() {
       // Now, with no pending transaction, let's compute the feePerKb
-			var d = $q.defer();
-			
+      var d = $q.defer();
+      
       self.walletClient1.getFeeLevels(CONFIG.NETWORK, function (err, levels) {
         if (err) {
           d.reject(err);
@@ -104,13 +104,13 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           })[0].feePerKB);
         }
       });
-			
-			return d.promise;
-			
+
+      return d.promise;
+
     }).then(function(feePerKB) {
       // Now we do have the fee rate. We can compute the total fees
-			var d = $q.defer();
-			
+      var d = $q.defer();
+
       self.walletClient1.getBalance({}, function(err, balance) {
         if (err) {
           d.reject(err);
@@ -126,13 +126,13 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
       });
       
       self.feePerKb = feePerKB;
-			
-			return d.promise;
-			
+
+      return d.promise;
+
     }).then(function(availableMaxBalance) {
       // We have our max available Balance. Let's move it
-			var d = $q.defer();
-			
+      var d = $q.defer();
+
       self.walletClient1.sendTxProposal({
         toAddress: toAddress,
         amount: availableMaxBalance,
@@ -146,12 +146,12 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           d.resolve(txp)
         }
       });
-			
-			return d.promise;
-			
+
+      return d.promise;
+
     }).then(function(txp) {
       // Transaction Proposal. Let's sign it.
-			var d = $q.defer();
+      var d = $q.defer();
 
       self.walletClient1.signTxProposal(txp, function(err, signedTxp) {
         if (err) {
@@ -174,13 +174,13 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           d.resolve(signedTxp);
         }
       });
-			
-			return d.promise
-			
+
+      return d.promise
+
     }).then(function(signedTxp) {
       // The transaction proposal is now signed twice. Broadcast!
-			var d = $q.defer();
-			
+      var d = $q.defer();
+
       self.walletClient1.broadcastTxProposal(signedTxp, function (err, btx, memo) {
         if (err) {
           d.reject(err);
@@ -188,16 +188,16 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           d.resolve([btx, memo]);
         }
       });
-			
-			return d.promise
-			
+
+      return d.promise
+
     }).then(function(result) {
-			var d = $q.defer();
-			
+      var d = $q.defer();
+
       d.resolve(result[0].amount);
-			
-			return d.promise
-			
+
+      return d.promise
+
     });
   };
 
@@ -247,12 +247,12 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           }
         });
       }
-			
+
       return d.promise;
-			
+
     }).then(function (result) {
       var d = $q.defer();
-			
+
       if (result === "WALLET_EXISTS") { // Wallet 2 initialized
           d.resolve("WALLET_EXISTS")
       } else { // Wallet doesn't exist, let's join the second client
@@ -266,9 +266,9 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           }
         });
       }
-			
+
       return d.promise;
-			
+
     }).then(function (result) {
       return $q(function (resolve, reject) {
         try {
@@ -294,7 +294,7 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
       });
     }).then(function (result) {
       var d = $q.defer();
-			
+
       // At this point all three wallets have been created
       // Let's wait for the completions of the publicKeyRing
       self.walletClient1.openWallet(function (err, status) {
@@ -306,7 +306,7 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
       })
 				
       return d.promise;
-			
+
     }).then(function (result) {
       var d = $q.defer();
       // TODO verificare cosa restituire all'utente dopo la creazione del wallet/indirizzo
