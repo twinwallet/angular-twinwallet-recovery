@@ -1,7 +1,7 @@
 
 var Buffer = buffer.Buffer;
 
-var bwrModule = angular.module('bwrModule', ['bwcModule', 'cscModule'])
+var bwrModule = angular.module('bwrModule', ['bwcModule', 'cosignKeyModule'])
 
 bwrModule.constant("CONFIG", {
   BWS_URL : 'http://twtest.undo.it:3232/bws/api', //BitWalletService URL
