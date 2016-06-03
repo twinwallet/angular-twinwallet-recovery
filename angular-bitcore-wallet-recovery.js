@@ -4,31 +4,107 @@ var Buffer = buffer.Buffer;
 var bwrModule = angular.module('bwrModule', ['bwcModule', 'cosignKeyModule'])
 
 bwrModule.constant("CONFIG", {
-  BWS_URL : 'http://twtest.undo.it:3232/bws/api', //BitWalletService URL
+//  BWS_URL : 'http://twtest.undo.it:3232/bws/api', //BitWalletService URL
 //  BWS_URL : 'https://bws.bitpay.com/bws/api', //BitWalletService URL
   NETWORK : 'testnet',
 });
 
 bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', function ($q, bwcService, cosignkey, CONFIG) {
 
-  bwcService.setBaseUrl(CONFIG.BWS_URL);
-
   this.walletClient1 = bwcService.getClient();
   this.walletClient2 = bwcService.getClient();
   this.walletClient3 = bwcService.getClient();
     
-  this.feePerKB = 0;
+  this.totalBytesToSendMax = 0;
   
+  /**
+   * setBaseUrl()
+   *
+   * @param url String |
+   * @return void |
+   */
+  this.setBaseUrl = function (url) {
+    bwcService.setBaseUrl(url);
+  }  
+  
+  /**
+   * getMaxFees()
+   *
+   * @return $q.promise |
+   * @throws String |
+   */
+  this.getMaxFees = function () {
+    var d = $q.defer(),
+        self = this;
+
+    if (self.totalBytesToSendMax === 0) throw "Call to getFees without prior call to getBalance.";
+
+    self.walletClient1.getFeeLevels(CONFIG.NETWORK, function (err, levels) {
+      if (err) {
+        d.reject(err);
+      } else {
+        d.resolve(levels.filter(function(obj) {
+          return obj.level === "normal";
+        })[0].feePerKB * self.totalBytesToSendMax);
+      }
+    });
+
+    return d.promise;
+  }  
+
+  
+  /**
+   * getBalance()
+   *
+   * @return $q.promise |
+   */
+  this.getBalance = function () {
+    var d = $q.defer(),
+        self = this;
+
+    self.walletClient1.getBalance({}, function(err, balance) {
+      if (err) {
+        d.reject(err);
+      } else {
+        self.totalBytesToSendMax = balance.totalBytesToSendMax;
+        d.resolve(balance.availableAmount);
+      }
+    });
+
+    return d.promise;
+  }  
+  
+  /**
+   * getHistory()
+   *
+   * @return $q.promise |
+   */
+  this.getTxHistory = function () {
+    var deferred = $q.defer()
+        self = this;
+
+    self.walletClient1.getTxHistory({includeExtendedInfo: true}, function(err, txs) {
+      if (err) {
+        deferred.reject(err);
+      } else {
+        deferred.resolve(txs.filter(function(tx) { return typeof tx.proposalId === 'undefined';}));
+      }
+    });
+
+    return deferred.promise;
+  }  
+
   /**
    * move()
    *
-   * @param from, to String |
+   * @param toAddress String |
+   * @param amount Integer |
    * @return $q.deferred.promise |
    */
-  this.move = function (toAddress) {
+  this.move = function (toAddress, amount) {
     
     var deferred = $q.defer(),
-      self = this;
+        self = this;
 
     // Let's trigger the whole promise chain
     self.walletClient1.getTxProposals({}, function(err, proposals) {
@@ -93,8 +169,8 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
     
     return deferred.promise.then(function() {
       // Now, with no pending transaction, let's compute the feePerKb
-      var d = $q.defer();
-      
+			var d = $q.defer();
+			
       self.walletClient1.getFeeLevels(CONFIG.NETWORK, function (err, levels) {
         if (err) {
           d.reject(err);
@@ -104,40 +180,18 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           })[0].feePerKB);
         }
       });
-
-      return d.promise;
-
+			
+			return d.promise;
+			
     }).then(function(feePerKB) {
       // Now we do have the fee rate. We can compute the total fees
-      var d = $q.defer();
-
-      self.walletClient1.getBalance({}, function(err, balance) {
-        if (err) {
-          d.reject(err);
-        } else {
-          var feeToSendMaxSat = parseInt(((balance.totalBytesToSendMax * feePerKB) / 1000.).toFixed(0));
-        
-          if (balance.availableAmount > feeToSendMaxSat) {
-            d.resolve(balance.availableAmount - feeToSendMaxSat);
-          } else {
-            d.reject("Not enough satoshis");
-          }
-        }
-      });
-      
-      self.feePerKb = feePerKB;
-
-      return d.promise;
-
-    }).then(function(availableMaxBalance) {
-      // We have our max available Balance. Let's move it
-      var d = $q.defer();
-
+			var d = $q.defer();
+			
       self.walletClient1.sendTxProposal({
         toAddress: toAddress,
-        amount: availableMaxBalance,
+        amount: amount,
         message: '',
-        feePerKb: this.feePerKb,
+        feePerKb: feePerKB,
         excludeUnconfirmedUtxos:  false
       }, function(err, txp) {
         if (err) {
@@ -146,12 +200,12 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           d.resolve(txp)
         }
       });
-
-      return d.promise;
-
+			
+			return d.promise;
+			
     }).then(function(txp) {
       // Transaction Proposal. Let's sign it.
-      var d = $q.defer();
+			var d = $q.defer();
 
       self.walletClient1.signTxProposal(txp, function(err, signedTxp) {
         if (err) {
@@ -174,13 +228,13 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           d.resolve(signedTxp);
         }
       });
-
-      return d.promise
-
+			
+			return d.promise
+			
     }).then(function(signedTxp) {
       // The transaction proposal is now signed twice. Broadcast!
-      var d = $q.defer();
-
+			var d = $q.defer();
+			
       self.walletClient1.broadcastTxProposal(signedTxp, function (err, btx, memo) {
         if (err) {
           d.reject(err);
@@ -188,16 +242,16 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           d.resolve([btx, memo]);
         }
       });
-
-      return d.promise
-
+			
+			return d.promise
+			
     }).then(function(result) {
-      var d = $q.defer();
-
+			var d = $q.defer();
+			
       d.resolve(result[0].amount);
-
-      return d.promise
-
+			
+			return d.promise
+			
     });
   };
 
@@ -247,12 +301,12 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           }
         });
       }
-
+			
       return d.promise;
-
+			
     }).then(function (result) {
       var d = $q.defer();
-
+			
       if (result === "WALLET_EXISTS") { // Wallet 2 initialized
           d.resolve("WALLET_EXISTS")
       } else { // Wallet doesn't exist, let's join the second client
@@ -266,9 +320,9 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           }
         });
       }
-
+			
       return d.promise;
-
+			
     }).then(function (result) {
       return $q(function (resolve, reject) {
         try {
@@ -294,7 +348,7 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
       });
     }).then(function (result) {
       var d = $q.defer();
-
+			
       // At this point all three wallets have been created
       // Let's wait for the completions of the publicKeyRing
       self.walletClient1.openWallet(function (err, status) {
@@ -306,7 +360,7 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
       })
 				
       return d.promise;
-
+			
     }).then(function (result) {
       var d = $q.defer();
       // TODO verificare cosa restituire all'utente dopo la creazione del wallet/indirizzo
