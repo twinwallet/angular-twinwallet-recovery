@@ -1,7 +1,7 @@
 {
-  "name": "bitcorewalletrecovery",
+  "name": "angular-twinwallet-recovery",
   "version": "0.0.1",
-  "description": "Bitcore - Wallet recovery: a tool for recovering twin wallets",
+  "description": "Angular TwinWallet Recovery: an angular/bitcore tool for recovering twin wallets",
   "dependencies": {
     "bitcore-wallet-client": "~2.1.1",
     "cosignkey": "git+https://github.com/twinwallet/cosignkey.git",
