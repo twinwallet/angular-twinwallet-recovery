@@ -15,7 +15,7 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
   this.walletClient2 = bwcService.getClient();
   this.walletClient3 = bwcService.getClient();
     
-  this.totalBytesToSendMax = 0;
+  this.totalBytesToSendMax = null;
   
   /**
    * setBaseUrl()
@@ -37,7 +37,7 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
     var d = $q.defer(),
         self = this;
 
-    if (self.totalBytesToSendMax === 0) throw "Call to getFees without prior call to getBalance.";
+    if (self.totalBytesToSendMax === null) throw "Call to getFees without prior call to getBalance.";
 
     self.walletClient1.getFeeLevels(CONFIG.NETWORK, function (err, levels) {
       if (err) {
@@ -348,7 +348,7 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
       });
     }).then(function (result) {
       var d = $q.defer();
-			
+
       // At this point all three wallets have been created
       // Let's wait for the completions of the publicKeyRing
       self.walletClient1.openWallet(function (err, status) {
@@ -358,25 +358,29 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
           d.resolve(result);
         }
       })
-				
+
       return d.promise;
-			
+
     }).then(function (result) {
       var d = $q.defer();
       // TODO verificare cosa restituire all'utente dopo la creazione del wallet/indirizzo
       self.walletClient1.getMainAddresses({}, function (err, addr) {
         if (err) {
           d.reject(err);
-        //} else if (addr.length === 0) { // No address defined yet
-        //  // Let's create it.
-        //  self.walletClient1.createAddress({}, function(err, address) {
-        //    if (err) {
-        //      d.reject(err);
-        //    } else {
-        //      // TODO vedi sopra
-        //      d.resolve(result);
-        //    }
-        //  });
+/*        
+        } else if (addr.length === 0) { // No address defined yet
+          // Let's create it.
+          self.walletClient1.createAddress({}, function(err, address) {
+            if (err) {
+              d.reject(err);
+            } else {
+              // TODO vedi sopra
+              console.debug(address)
+              d.resolve(result);
+            }
+          });
+        
+*/
         } else {
           // TODO vedi sopra
           d.resolve(result);
