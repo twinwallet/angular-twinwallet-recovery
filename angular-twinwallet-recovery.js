@@ -347,15 +347,31 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
         }
       });
     }).then(function (result) {
-      var d = $q.defer();
+      var d = $q.defer(),
+        d1 = $q.defer(),
+        d2 = $q.defer();
+
+      $q.all([d1.promise, d2.promise]).then(function(result) {
+        d.resolve(result);
+      }, function (reason) {
+        d.reject(err);
+      });
 
       // At this point all three wallets have been created
       // Let's wait for the completions of the publicKeyRing
       self.walletClient1.openWallet(function (err, status) {
         if (err) {
-          d.reject(err);
+          d1.reject(err);
         } else {
-          d.resolve(result);
+          d1.resolve(result);
+        }
+      })
+
+      self.walletClient2.openWallet(function (err, status) {
+        if (err) {
+          d2.reject(err);
+        } else {
+          d2.resolve(result);
         }
       })
 
