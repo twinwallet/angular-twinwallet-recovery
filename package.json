@@ -5,5 +5,17 @@
   "dependencies": {
     "bitcore-wallet-client": "~2.1.1",
     "cosignkey": "git+https://github.com/twinwallet/cosignkey.git"
-  }
+  },
+  "main": "angular-twinwallet-recovery.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/twinwallet/angular-twinwallet-recovery.git"
+  },
+  "author": "Twin Wallet S.A.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/twinwallet/angular-twinwallet-recovery/issues"
+  },
+  "homepage": "https://github.com/twinwallet/angular-twinwallet-recovery"
 }
