@@ -11,10 +11,6 @@ bwrModule.constant("CONFIG", {
 
 bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', function ($q, bwcService, cosignkey, CONFIG) {
 
-  this.walletClient1 = bwcService.getClient();
-  this.walletClient2 = bwcService.getClient();
-  this.walletClient3 = bwcService.getClient();
-    
   this.totalBytesToSendMax = null;
   
   /**
@@ -24,7 +20,12 @@ bwrModule.service('bwrService', ['$q', 'bwcService', 'cosignkey', 'CONFIG', func
    * @return void |
    */
   this.setBaseUrl = function (url) {
+
     bwcService.setBaseUrl(url);
+
+    this.walletClient1 = bwcService.getClient();
+    this.walletClient2 = bwcService.getClient();
+    this.walletClient3 = bwcService.getClient();
   }  
   
   /**
